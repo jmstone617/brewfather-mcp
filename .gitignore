@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build outputs (we only want the source code, not the compiled JS)
+dist/
+build/
+
+# System files
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment Variables
+.env
