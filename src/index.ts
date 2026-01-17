@@ -7,6 +7,8 @@ import {
 import "dotenv/config";
 import { getAuthHeaders } from "./utils/helpers.js";
 import getBatchesHandler from "./tools/getBatches.js";
+import getBatchDetailsHandler from "./tools/getBatchDetails.js";
+import { get } from "node:http";
 
 // 1. Initialize the server
 const server = new Server(
@@ -38,20 +40,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 },
             },
             getBatchesHandler,
-            {
-                name: "get_batch_details",
-                description: "Retrieves the details about a specific batch.",
-                inputSchema: {
-                    type: "object",
-                    properties: {
-                        batch_id: {
-                            type: "string",
-                            description: "The ID of the batch to retrieve"
-                        }
-                    },
-                    required: ["batch_id"],
-                },
-            },
+            getBatchDetailsHandler,
         ],
     };
 });
@@ -78,42 +67,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     else if (request.params.name === getBatchesHandler.name) {
         return await getBatchesHandler.run(request.params.arguments);
     }
-    else if (request.params.name === "get_batch_details") {
-        const args = request.params.arguments as { batch_id: string };
-        const batchId = args.batch_id;
-
-        try {
-            const response = await fetch(
-                `https://api.brewfather.app/v2/batches/${batchId}`,
-                {
-                    headers: getAuthHeaders(),
-                }
-            );
-
-            if (!response.ok) {
-                return {
-                    content: [{type: "text", text: "Error retrieving batch details"}],
-                    isError: true,
-                };
-            }
-
-            const data = await response.json();
-
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify(data, null, 2),
-                    },
-                ],
-            }
-        }
-        catch (error) {
-            return {
-                content: [{ type: "text", text: `Request failed: ${error}` }],
-                isError: true,
-            }
-        }
+    else if (request.params.name === getBatchDetailsHandler.name) {
+        return await getBatchDetailsHandler.run(request.params.arguments);
     }
     throw new Error("Tool not found");
 });
