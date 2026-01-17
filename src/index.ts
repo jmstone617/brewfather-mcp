@@ -5,24 +5,8 @@ import {
     ListToolsRequestSchema
 } from "@modelcontextprotocol/sdk/types.js";
 import "dotenv/config";
-
-// Verify keys are present
-const BF_USER = process.env.BREWFATHER_USER_ID;
-const BF_KEY = process.env.BREWFATHER_API_KEY;
-
-if (!BF_USER || !BF_KEY) {
-    console.error("BREWFATHER_USER_ID and BREWFATHER_API_KEY must be set");
-    process.exit(1);
-}
-
-// Helper for Basic Auth header
-function getAuthHeaders() {
-    const authString = Buffer.from(`${BF_USER}:${BF_KEY}`).toString("base64");
-    return {
-        Authorization: `Basic ${authString}`,
-        "Content-Type": "application/json",
-    };
-}
+import { getAuthHeaders } from "./utils/helpers.js";
+import getBatchesHandler from "./tools/getBatches.js";
 
 // 1. Initialize the server
 const server = new Server(
@@ -53,19 +37,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     required: ["og", "fg"]
                 },
             },
-            {
-                name: "get_batches",
-                description: "Retrieves a list of the most recent batches from BrewFather",
-                inputSchema: {
-                    type: "object",
-                    properties: {
-                        limit: {
-                            type: "number",
-                            description: "Max number of batches to return (default: 5)"
-                        }
-                    },
-                },
-            },
+            getBatchesHandler,
             {
                 name: "get_batch_details",
                 description: "Retrieves the details about a specific batch.",
@@ -103,43 +75,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             ],
         };
     }
-    else if (request.params.name === "get_batches") {
-        const args = request.params.arguments as { limit?: number };
-        const limit = args.limit ? args.limit : 5;
-
-        try {
-            const response = await fetch(
-                `https://api.brewfather.app/v2/batches?limit=${limit}&order_by_direction=desc&order_by=brewDate`,
-                {
-                    headers: getAuthHeaders(),
-                }
-            );
-
-            if (!response.ok) {
-                return {
-                    content: [{type: "text", text: "Error retrieving batches"}],
-                    isError: true,
-                };
-            }
-
-            const data = await response.json();
-
-            // We return the raw JSON so the LLM can analyze it
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify(data, null, 2),
-                    },
-                ],
-            }
-        }
-        catch (error) {
-            return {
-                content:[{ type: "text", text: `Request failed: ${error}` }],
-                isError: true,
-            }
-        }
+    else if (request.params.name === getBatchesHandler.name) {
+        return await getBatchesHandler.run(request.params.arguments);
     }
     else if (request.params.name === "get_batch_details") {
         const args = request.params.arguments as { batch_id: string };
