@@ -21,8 +21,8 @@ async function main() {
     // 2. Create the MCP Client
     const client = new Client(
         {
-            name: "my-custom-host",
-            version: "1.0.0",
+            name: "brewfather-host",
+            version: "0.1.0",
         },
         {
             capabilities: {},
