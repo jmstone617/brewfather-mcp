@@ -46,10 +46,12 @@ async function main() {
         },
     }));
 
+    const query = "What did I brew last month?";
+
     const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-            { role: "user", content: "Get the last 3 batches" }
+            { role: "user", content: query }
         ],
         tools: openAITools as any, // Overrule Typescript's type check
     });
@@ -74,7 +76,7 @@ async function main() {
 
         // Add all messages to a history array
         const conversationHistory = [
-            { role: "user", content: "Get the last 3 batches" },
+            { role: "user", content: query },
             response.choices[0]?.message,
             toolMessage                  
         ];
